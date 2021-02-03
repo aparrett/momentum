@@ -1,5 +1,5 @@
 import { Button, Divider, ListItem } from '@material-ui/core'
-import * as alpaca from '../service/alpaca'
+import { broker } from '../service/broker'
 import React from 'react'
 
 function Position(props) {
@@ -7,13 +7,13 @@ function Position(props) {
 
     const handleSellAll = async () => {
         try {
-            await alpaca.createOrder({
+            await broker.createOrder({
                 symbol: position.symbol,
                 qty: position.qty,
                 side: 'sell'
             })
 
-            const results = await Promise.all([alpaca.getPositions(), alpaca.getAccount()])
+            const results = await Promise.all([broker.getPositions(), broker.getAccount()])
 
             setPositions(results[0])
             setAccount(results[1])

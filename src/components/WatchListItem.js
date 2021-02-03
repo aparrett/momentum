@@ -1,9 +1,9 @@
 import { Button, Divider, TextField, ListItem, Checkbox } from '@material-ui/core'
 import React, { useState } from 'react'
-import * as alpaca from '../service/alpaca'
+import { broker } from '../service/broker'
 
 function WatchListItem(props) {
-    const { asset, account, setAccount } = props
+    const { asset, account, setAccount, setPositions } = props
     const [sharesCount, setSharesCount] = useState(0)
     const [canBuy, setCanBuy] = useState(false)
 
@@ -24,7 +24,24 @@ function WatchListItem(props) {
         }
     }
 
-    const handleBuyShares = () => {
+    const handleBuyShares = async () => {
+        try {
+            console.log(`Buying ${sharesCount} shares of ${asset.symbol}`)
+
+            await broker.createOrder({
+                symbol: asset.symbol,
+                qty: sharesCount,
+                side: 'buy'
+            })
+
+            const results = await Promise.all([broker.getAccount(), broker.getPositions()])
+            setAccount(results[0])
+            setPositions(results[1])
+        } catch (e) {
+            console.error('Error placing order:', e)
+        }
+
+        // Set the shares regardless because the order is still in limbo.
         setSharesCount(0)
     }
 
@@ -42,13 +59,15 @@ function WatchListItem(props) {
             console.log(`Max shares for $${account.cash} cash at $${price} is ${maxShares}.`)
             console.log(`Buying ${maxShares} shares of ${asset.symbol}`)
 
-            await alpaca.createOrder({
+            await broker.createOrder({
                 symbol: asset.symbol,
                 qty: maxShares,
                 side: 'buy'
             })
 
-            setAccount(await alpaca.getAccount())
+            const results = await Promise.all([broker.getAccount(), broker.getPositions()])
+            setAccount(results[0])
+            setPositions(results[1])
         } catch (e) {
             console.error('Error placing order:', e)
         }

@@ -1,7 +1,7 @@
 import '../App.css'
 import { Button, Container, TextField, Box, List, ListItem } from '@material-ui/core'
 import React, { useState } from 'react'
-import * as alpaca from '../service/alpaca'
+import { broker } from '../service/broker'
 import WatchListItem from './WatchListItem'
 import Position from './Position'
 
@@ -13,18 +13,10 @@ function AccountInfo(props) {
     const { account } = props
     return (
         <Container style={{ marginTop: '20px' }}>
-            {account.pattern_day_trader && (
-                <div style={{ color: '#e53935' }}>Warning: Alpaca has listed you as a Pattern Day Trader.</div>
+            {account.isDayTrader && (
+                <div style={{ color: '#e53935' }}>Warning: You have been listed as a Pattern Day Trader.</div>
             )}
-            {account.trade_suspended_by_user && (
-                <div style={{ color: '#e53935' }}>Warning: You have suspended yourself from trading.</div>
-            )}
-            {account.trading_blocked && (
-                <div style={{ color: '#e53935' }}>Warning: Alpaca has blocked trading until further notice.</div>
-            )}
-            <div>
-                Cash: ${format(account.cash)} (${format(account.buying_power)})
-            </div>
+            <div>Cash: ${format(account.cash)}</div>
         </Container>
     )
 }
@@ -53,7 +45,7 @@ function Positions(props) {
 }
 
 function WatchList(props) {
-    const { watchList, setWatchList, account, setAccount } = props
+    const { watchList, setWatchList, account, setAccount, setPositions } = props
     const [newWatchItem, setNewWatchItem] = useState('')
 
     const handleNewWatchItemChange = (e) => {
@@ -62,7 +54,7 @@ function WatchList(props) {
 
     const handleAddWatchItem = async () => {
         try {
-            const updatedWatchList = await alpaca.addToWatchList(watchList.id, newWatchItem)
+            const updatedWatchList = await broker.addToWatchList(watchList.id, newWatchItem)
             setWatchList(updatedWatchList)
             setNewWatchItem('')
         } catch (e) {
@@ -89,6 +81,7 @@ function WatchList(props) {
                             account={account}
                             setAccount={setAccount}
                             key={asset.symbol + asset.exchange}
+                            setPositions={setPositions}
                         />
                     ))}
                     <ListItem>
@@ -117,13 +110,13 @@ function WatchList(props) {
 }
 
 function Account(props) {
-    const { settings, account, setAccount, watchList, setWatchList, positions, setPositions } = props
+    const { isPaper, account, setAccount, watchList, setWatchList, positions, setPositions } = props
 
     return (
         <div>
             <Container>
                 <Box display="flex" justifyContent="space-between">
-                    {settings.paper ? (
+                    {isPaper ? (
                         <div style={{ fontWeight: 'bold' }}>Simulating..</div>
                     ) : (
                         <div style={{ color: '#64dd17', fontWeight: 'bold' }}>Live!</div>
@@ -132,7 +125,13 @@ function Account(props) {
                 </Box>
             </Container>
             <AccountInfo account={account} />
-            <WatchList watchList={watchList} setWatchList={setWatchList} setAccount={setAccount} account={account} />
+            <WatchList
+                watchList={watchList}
+                setWatchList={setWatchList}
+                setAccount={setAccount}
+                account={account}
+                setPositions={setPositions}
+            />
             <Positions positions={positions} setAccount={setAccount} setPositions={setPositions} />
         </div>
     )

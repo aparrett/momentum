@@ -1,24 +1,30 @@
 import Alpaca from '@alpacahq/alpaca-trade-api'
 
-let alpacaSettings, alpaca
+let alpaca
 
-export const init = async (settings) => {
-    if (!settings) {
-        throw 'Alpaca settings not given. Unable to initialize.'
+export const init = async () => {
+    const settings = {
+        keyId: process.env.REACT_APP_ALP_CLIENT_ID,
+        secretKey: process.env.REACT_APP_ALP_CLIENT_SECRET,
+        paper: true,
+        usePolygon: false
     }
 
-    alpacaSettings = settings
-    alpaca = new Alpaca(alpacaSettings)
-
-    return await getAccount()
+    alpaca = new Alpaca(settings)
+    return alpaca
 }
 
-export const getAccount = () => {
+export const getAccount = async () => {
+    console.log('getting account')
     if (!alpaca) {
         throw 'Alpaca must be initilized before retrieving account details'
     }
 
-    return alpaca.getAccount()
+    const account = await alpaca.getAccount()
+    return {
+        ...account,
+        isDayTrader: account.pattern_day_trader
+    }
 }
 
 export const getClosedOrders = () => {
